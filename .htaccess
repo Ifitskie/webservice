@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+	RewriteEngine on
+#	RewriteRule ^games/?$ gameservice.php?type=json&category=all
+#	RewriteRule ^games/([0-9]{5})$ gameservice.php?id=$1&type=json&category=single
+#	RewriteRule ^games/([0-9]{5})\.(json|xml)$ gameservice.php?id=$1&type=json&category=single
+
+
+    RewriteRule ^books/?$ index.php
+     RewriteRule ^books/([0-9]+)$ book.php?id=$1
+</IfModule>
