@@ -40,7 +40,51 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     } elseif ($accept == "application/xml") {
         header("Content-Type: application/xml");
 
-        echo "xml";
+        $xml = "<?xml version='1.0' encoding='UTF-8'?> <books>";
+        foreach ($results as $book){
+            $xml .= "<book>";
+                $xml .= "<Title>".$book["Title"]."</Title>";
+                $xml .= "<Author>". $book["Author"]."</Author>";
+                $xml .= "<Series>".$book["Series"]."</Series>";
+            $xml.="</book>";
+            $xml .= "<links>";
+                $xml .= "<link>";
+                    $xml .= "<rel>self</rel>";
+                    $xml .= "<href>http://localhost/hro/webservice/books/" . $book["id"]."</href>";
+                $xml .= "</link>";
+                $xml .= "<link>";
+                   $xml .= "<rel>Collection</rel>";
+                   $xml .= "<href>http://localhost/hro/webservice/books/</href>";
+                $xml .= "</link>";
+            $xml .= "</links>";
+        }
+        $xml .= "</books>";
+//        $xml .="<pagination>";
+//            $xml .="<currentPage>1</currentPage>";
+//            $xml .="<currentItems>15</currentItems>";
+//            $xml .="<totalPages>1</totalPages>";
+//            $xml .="<totalItems>103</totalItems>";
+//            $xml .= "<links>";
+//                $xml .= "<link>";
+//                    $xml .= "<rel>first</rel>";
+//                    $xml .= "<href>http://localhost/hro/webservice/books/</href>";
+//                $xml .= "</link>";
+//                $xml .= "<link>";
+//                    $xml .= "<rel>last</rel>";
+//                    $xml .= "<href>http://localhost/hro/webservice/books/</href>";
+//                $xml .= "</link>";
+//                $xml .= "<link>";
+//                    $xml .= "<rel>previous</rel>";
+//                    $xml .= "<href>http://localhost/hro/webservice/books/</href>";
+//                $xml .= "</link>";
+//                $xml .= "<link>";
+//                    $xml .= "<rel>next</rel>";
+//                    $xml .= "<href>http://localhost/hro/webservice/books/</href>";
+//                $xml .= "</link>";
+//            $xml .= "</links>";
+//        $xml.= "</pagination>";
+
+        echo $xml;
         http_response_code(200);
         exit;
     } else {
@@ -100,30 +144,3 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 } else {
     http_response_code(403);
 }
-
-//if (isset($_GET["id"]))
-//{
-//    $id = $_GET["id"];
-//
-//    $query = "SELECT * FROM book WHERE id = '".$id."'";
-//    $results = mysqli_query($connect, $query);
-//    $resultArray = [];
-//
-//    while ($row = mysqli_fetch_assoc($results)) {
-//
-//        $links = array();
-//
-//        $link = array();
-//        $link["href"] = "http://localhost/hro/webservice/books/" . $row["id"];
-//        $link["rel"] = "self";
-//
-//        $links[] = $link;
-//
-//        $row["links"] = $links;
-//
-//        $resultArray[] = $row;
-//    }
-// z   echo json_encode($resultArray);
-//
-//    http_response_code(200);
-//}
