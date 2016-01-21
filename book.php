@@ -10,104 +10,107 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
     $resultArray = [];
     $accept = $_SERVER["HTTP_ACCEPT"];
 
-    if ($accept == "application/json") {
-        header("Content-Type: application/json");
-        while ($row = mysqli_fetch_assoc($results)) {
+    if (mysqli_num_rows($results) > 0) {
 
-            $links = array();
+        if ($accept == "application/json") {
+            header("Content-Type: application/json");
+            while ($row = mysqli_fetch_assoc($results)) {
 
-            $link = array();
-            $link["rel"] = "self";
-            $link["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/" . $row["id"];
+                $links = array();
 
-            $linkcollection = array();
-            $linkcollection["rel"] = "collection";
-            $linkcollection["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
+                $link = array();
+                $link["rel"] = "self";
+                $link["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/" . $row["id"];
 
-            array_push($links, $link);
-            array_push($links, $linkcollection);
+                $linkcollection = array();
+                $linkcollection["rel"] = "collection";
+                $linkcollection["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
 
-            $row["links"] = $links;
+                array_push($links, $link);
+                array_push($links, $linkcollection);
 
-            $resultArray["item"] = $row;
+                $row["links"] = $links;
+
+                echo json_encode($row);
+
+                http_response_code(200);
+                exit;
+            }
+
+        } elseif ($accept == "application/xml") {
+            header("Content-Type: application/xml");
+            $xml = "<?xml version='1.0' encoding='UTF-8'?> <books>";
+            foreach ($results as $book) {
+                $xml .= "<book>";
+                $xml .= "<Title>" . $book["Title"] . "</Title>";
+                $xml .= "<Author>" . $book["Author"] . "</Author>";
+                $xml .= "<Series>" . $book["Series"] . "</Series>";
+                $xml .= "</book>";
+                $xml .= "<links>";
+                $xml .= "<link>";
+                $xml .= "<rel>self</rel>";
+                $xml .= "<href>https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/" . $book["id"] . "</href>";
+                $xml .= "</link>";
+                $xml .= "<link>";
+                $xml .= "<rel>collection</rel>";
+                $xml .= "<href>https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/</href>";
+                $xml .= "</link>";
+                $xml .= "</links>";
+            }
+            $xml .= "</books>";
+
+            echo $xml;
+            http_response_code(200);
+            exit;
+
+        } else {
+            http_response_code(403);
         }
-
-
-
-        echo json_encode($resultArray);
-
-        http_response_code(200);
-        exit;
-
-    } elseif ($accept == "application/xml") {
-        header("Content-Type: application/xml");
-        $xml = "<?xml version='1.0' encoding='UTF-8'?> <books>";
-        foreach ($results as $book) {
-            $xml .= "<book>";
-            $xml .= "<Title>" . $book["Title"] . "</Title>";
-            $xml .= "<Author>" . $book["Author"] . "</Author>";
-            $xml .= "<Series>" . $book["Series"] . "</Series>";
-            $xml .= "</book>";
-            $xml .= "<links>";
-            $xml .= "<link>";
-            $xml .= "<rel>self</rel>";
-            $xml .= "<href>https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/" . $book["id"] . "</href>";
-            $xml .= "</link>";
-            $xml .= "<link>";
-            $xml .= "<rel>collection</rel>";
-            $xml .= "<href>https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/</href>";
-            $xml .= "</link>";
-            $xml .= "</links>";
-        }
-        $xml .= "</books>";
-
-        echo $xml;
-        http_response_code(200);
-        exit;
-
     } else {
-        http_response_code(403);
+        http_response_code(404);
     }
-}elseif ($_SERVER["REQUEST_METHOD"] == "PUT"){
+
+} elseif ($_SERVER["REQUEST_METHOD"] == "PUT"){
     $content = $_SERVER["CONTENT_TYPE"];
 
     if ($content == "application/json") {
         $body = file_get_contents("php://input");
         $json = json_decode($body);
 
-        var_dump($json);
-        
+        $author =(isset($json->Author)) ? $json->Author : "";
+        $title =(isset($json->Title)) ? $json->Title : "";
+        $series =(isset($json->Series)) ? $json->Author : "";
+        $haveBook =(isset($json->HaveBook)) ? $json->Author : "";
 
-        if ($json->Author = null) {
+
+        if ($author == "" || $title == "" || $series == "") {
             http_response_code(403);
         } else {
-//            if ($json->Series == "" || $json->Series = null) {
-//                $json->Series = " ";
-//                $query = "UPDATE book SET Title ='".$json->Title."', Author ='".$json->Author."', Series ='".$json->Series."', HaveBook ='".$json->HaveBook."' WHERE id='".$id."'";
-//            } else {
-//                $query = "UPDATE book SET Title ='".$json->Title."', Author ='".$json->Author."', Series ='".$json->Series."', HaveBook ='".$json->HaveBook."' WHERE id='".$id."'";
-//            }
+           if ($haveBook == "") {
+                $query = "UPDATE book SET Title ='".$title."', Author ='".$author."', Series ='".$series."' WHERE id='".$id."'";
+
+            } else {
+                $query = "UPDATE book SET Title ='".$title."', Author ='".$author."', Series ='".$series."', HaveBook ='".$haveBook."' WHERE id='".$id."'";
+           }
 
 
 //            echo $query;
-//            mysqli_query($connect, $query);
-            http_response_code(201);
+            mysqli_query($connect, $query);
+            http_response_code(200);
         }
         exit;
     } elseif ($content == "application/x-www-form-urlencoded") {
-        if ($_POST["Title"] == null ) {
-            http_response_code(403);
-        } elseif ($_POST["Author"] == null){
+        if ($_POST["Title"] == null || $_POST["Author"] == null || $_POST["Series"] == null) {
             http_response_code(403);
         } else {
 
-            if ($_POST["Series"] == null) {
-                echo "Toegevoegd: ", $_POST["Title"], " van ", $_POST["Author"];
+            if ($_POST["HaveBook"] == null) {
+                $query = "UPDATE book SET Title ='". $_POST["Title"]."', Author ='".$_POST["Author"]."', Series ='".$_POST["Series"]."' WHERE id='".$id."'";
             } else {
-                echo "Toegevoegd: ", $_POST["Title"], " van ", $_POST["Author"], " is deel van ", $_POST["Series"], " status boek: ", $_POST["HaveBook"];
+                $query = "UPDATE book SET Title ='". $_POST["Title"]."', Author ='".$_POST["Author"]."', Series ='".$_POST["Series"]."', HaveBook ='".$_POST["HaveBook"]."' WHERE id='".$id."'";
             }
 
-            $query = "UPDATE book SET Title ='". $_POST["Title"]."', Author ='".$_POST["Author"]."', Series ='".$_POST["Series"]."', HaveBook ='".$_POST["HaveBook"]."' WHERE id='".$id."'";
+
             mysqli_query($connect, $query);
             http_response_code(200);
         }
@@ -115,7 +118,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         http_response_code(403);
     }
 }
-elseif ($_SERVER["REQUEST_METHOD"] == "DELETE"){}
+elseif ($_SERVER["REQUEST_METHOD"] == "DELETE"){
+    $query = "DELETE FROM book WHERE id = '".$id."'";
+    mysqli_query($connect, $query);
+    http_response_code(204);
+}
 elseif ($_SERVER["REQUEST_METHOD"] == "OPTIONS") {
     header("Allow: GET, PUT, DELETE, OPTIONS");
     exit;

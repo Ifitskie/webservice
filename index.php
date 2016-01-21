@@ -1,8 +1,6 @@
 <?php
 include "config.php";
 
-$connect = mysqli_connect($db_host, $db_user, $db_password, $db_database);
-
 if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
     $query = "SELECT id,Title,Author,Series FROM book";
@@ -13,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 //get start
     if (isset($_GET['start'])) {
         if ($_GET['start'] > 1) {
-            $start = $_GET['start'] - 1;
+            $start = (int)$_GET['start'] - 1;
         } else {
             $start = 0;
         }
@@ -21,19 +19,17 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $start = 0;
     }
 
-
-//get limit
-    if (isset($_GET['limit'])) {
-        $limit = (int)$_GET['limit'];
-    } else {
-        $limit = 10;
-    }
-
 //count total entries
     $countQuery = "SELECT * FROM book";
     $totalBooks = mysqli_query($connect, $countQuery);
     $total = (int)mysqli_num_rows($totalBooks);
 
+//get limit
+    if (isset($_GET['limit'])) {
+        $limit = (int)$_GET['limit'];
+    } else {
+        $limit = $total;
+    }
 
 //get entries with start and limit the amount
     $limitQuery = "SELECT id,Title,Author,Series FROM book LIMIT " . $start . ", " . $limit . "";
@@ -69,31 +65,42 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
         $pagelinks = array();
 
-            $firstpage = array();
-            $firstpage["rel"] = "first";
-            $firstpage["page"] = 1;
-            $firstpage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
-            array_push($pagelinks, $firstpage);
+        $firstpage = array();
+        $firstpage["rel"] = "first";
+        $firstpage["page"] = 1;
+        $firstpage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books?start=1&limit=10";
+        array_push($pagelinks, $firstpage);
 
-            $lastpage = array();
-            $lastpage["rel"] = "last";
-            $lastpage["page"] = $pages;
-            $lastpage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
-            array_push($pagelinks, $lastpage);
 
-            $previouspage = array();
-            $previouspage["rel"] = "previous";
-            $previouspage["page"] = 1;
-            $previouspage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
-            array_push($pagelinks, $previouspage);
+        $last = floor($total / $limit);
+        $lastStart = $last * $limit + 1;
 
-            $nextpage = array();
-            $nextpage["rel"] = "next";
-            $nextpage["page"] = 1;
-            $nextpage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
-            array_push($pagelinks, $nextpage);
+        $lastpage = array();
+        $lastpage["rel"] = "last";
+        $lastpage["page"] = $pages;
+        $lastpage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books?start=".$lastStart."&limit=10";
+        array_push($pagelinks, $lastpage);
 
-        $pagination["currentPage"] = 1;
+//        $current = (int)$_GET["start"];
+//        $previous = $current - $limit;
+//        $previousStart = ($previous < 10) ? $previousStart = 1 : $previousStart = $previous;
+
+        $previouspage = array();
+        $previouspage["rel"] = "previous";
+        $previouspage["page"] = 1;
+        $previouspage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/?start=&limit=10";
+        array_push($pagelinks, $previouspage);
+
+        $currentPage = ceil($start / $limit) + 1;
+        $next = ($currentPage * $limit) + 1;
+        $nextStart = ($next > $lastStart) ? $nextStart = $lastStart : $nextStart = $next;
+        $nextpage = array();
+        $nextpage["rel"] = "next";
+        $nextpage["page"] = 1;
+        $nextpage["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/?start=".$nextStart."&limit=10  ";
+        array_push($pagelinks, $nextpage);
+
+        $pagination["currentPage"] = $currentPage;
         $pagination["currentItems"] = $limit;
         $pagination["totalPages"] = $pages;
         $pagination["totalItems"] = $total;
@@ -105,7 +112,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $linkcollection["rel"] = "self";
         $linkcollection["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
 
-        array_push($links,$linkcollection);
+        array_push($links, $linkcollection);
 
         $resultArray["items"] = $items;
         $resultArray["pagination"] = $pagination;
@@ -158,17 +165,20 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $body = file_get_contents("php://input");
         $json = json_decode($body);
 
-        //
-        if ($json->Title || $json->Author == null) {
+        $author = (isset($json->Author)) ? $json->Author : "";
+        $title = (isset($json->Title)) ? $json->Title : "";
+        $series = (isset($json->Series)) ? $json->Author : "";
+        $haveBook = (isset($json->HaveBook)) ? $json->Author : "";
+
+        if ($author == "" || $title == "" || $series == "") {
             http_response_code(403);
         } else {
-            if ($json->Series == "") {
-                echo "Toegevoegd: ", $json->Title, " van ", $json->Author;
+            if ($haveBook == "") {
+                $query = "INSERT INTO book (Title, Author, Series) VALUES ('" . $title . "','" . $author . "','" . $series . "')";
             } else {
-                echo "Toegevoegd: ", $json->Title, " van ", $json->Author, " is deel van ", $json->Series, " status boek: ", $json->HaveBook;
+                $query = "INSERT INTO book (Title, Author, Series, HaveBook) VALUES ('" . $title . "','" . $author . "','" . $series . "','" . $haveBook . "')";
             }
 
-            $query = "INSERT INTO book (Title, Author, Series, HaveBook) VALUES ('" . $json->Title . "','" . $json->Author . "','" . $json->Series . "','" . $json->HaveBook . "')";
             mysqli_query($connect, $query);
             http_response_code(201);
         }
