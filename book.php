@@ -12,26 +12,28 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
     if ($accept == "application/json") {
         header("Content-Type: application/json");
-
         while ($row = mysqli_fetch_assoc($results)) {
 
             $links = array();
 
             $link = array();
             $link["rel"] = "self";
-            $link["href"] = "http://localhost/hro/webservice/books/" . $row["id"];
+            $link["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/" . $row["id"];
 
             $linkcollection = array();
             $linkcollection["rel"] = "collection";
-            $linkcollection["href"] = "http://localhost/hro/webservice/books/";
+            $linkcollection["href"] = "https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/";
 
             array_push($links, $link);
             array_push($links, $linkcollection);
 
             $row["links"] = $links;
 
-            $resultArray[] = $row;
+            $resultArray["item"] = $row;
         }
+
+
+
         echo json_encode($resultArray);
 
         http_response_code(200);
@@ -49,11 +51,11 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
             $xml .= "<links>";
             $xml .= "<link>";
             $xml .= "<rel>self</rel>";
-            $xml .= "<href>http://localhost/hro/webservice/books/" . $book["id"] . "</href>";
+            $xml .= "<href>https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/" . $book["id"] . "</href>";
             $xml .= "</link>";
             $xml .= "<link>";
-            $xml .= "<rel>Collection</rel>";
-            $xml .= "<href>http://localhost/hro/webservice/books/</href>";
+            $xml .= "<rel>collection</rel>";
+            $xml .= "<href>https://stud.hosted.hr.nl/0892682/jaar2/webservice/books/</href>";
             $xml .= "</link>";
             $xml .= "</links>";
         }
@@ -73,17 +75,22 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
         $body = file_get_contents("php://input");
         $json = json_decode($body);
 
-        if ($json->Title || $json->Author == null) {
+        var_dump($json);
+        
+
+        if ($json->Author = null) {
             http_response_code(403);
         } else {
-            if ($json->Series == "") {
-                echo "Toegevoegd: ", $json->Title, " van ", $json->Author;
-            } else {
-                echo "Toegevoegd: ", $json->Title, " van ", $json->Author, " is deel van ", $json->Series, " status boek: ", $json->HaveBook;
-            }
+//            if ($json->Series == "" || $json->Series = null) {
+//                $json->Series = " ";
+//                $query = "UPDATE book SET Title ='".$json->Title."', Author ='".$json->Author."', Series ='".$json->Series."', HaveBook ='".$json->HaveBook."' WHERE id='".$id."'";
+//            } else {
+//                $query = "UPDATE book SET Title ='".$json->Title."', Author ='".$json->Author."', Series ='".$json->Series."', HaveBook ='".$json->HaveBook."' WHERE id='".$id."'";
+//            }
 
-            $query = "UPDATE book SET Title ='".$json->Title."', Author ='".$json->Author."', Series ='".$json->Series."', HaveBook ='".$json->HaveBook."' WHERE id='".$id."'";
-            mysqli_query($connect, $query);
+
+//            echo $query;
+//            mysqli_query($connect, $query);
             http_response_code(201);
         }
         exit;
@@ -102,7 +109,7 @@ if ($_SERVER["REQUEST_METHOD"] == "GET") {
 
             $query = "UPDATE book SET Title ='". $_POST["Title"]."', Author ='".$_POST["Author"]."', Series ='".$_POST["Series"]."', HaveBook ='".$_POST["HaveBook"]."' WHERE id='".$id."'";
             mysqli_query($connect, $query);
-            http_response_code(201);
+            http_response_code(200);
         }
     } else {
         http_response_code(403);
